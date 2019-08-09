@@ -497,7 +497,7 @@ class tl_form extends Contao\Backend
 		// Generate an alias if there is none
 		if ($varValue == '')
 		{
-			$varValue = Contao\System::getContainer()->get('contao.slug')->generate($dc->activeRecord->title, $dc->activeRecord->jumpTo, $aliasExists);
+			$varValue = Contao\System::getContainer()->get('contao.slug')->generate($dc->activeRecord->title, Contao\Input::post('jumpTo') ?: $dc->activeRecord->jumpTo, $aliasExists);
 		}
 		elseif ($aliasExists($varValue))
 		{
@@ -514,7 +514,16 @@ class tl_form extends Contao\Backend
 	 */
 	public function getAllTables()
 	{
-		return $this->Database->listTables();
+		$arrTables = $this->Database->listTables();
+		$arrViews = Contao\System::getContainer()->get('database_connection')->getSchemaManager()->listViews();
+
+		if (!empty($arrViews))
+		{
+			$arrTables = array_merge($arrTables, array_keys($arrViews));
+			natsort($arrTables);
+		}
+
+		return array_values($arrTables);
 	}
 
 	/**

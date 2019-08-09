@@ -353,6 +353,11 @@ services:
             - "@contao.framework"
             - "%contao.prepend_locale%"
 
+    contao.routing.language_filter:
+        class: Contao\CoreBundle\Routing\Matcher\LanguageFilter
+        arguments:
+            - "%contao.prepend_locale%"
+
     contao.routing.legacy_matcher:
         class: Contao\CoreBundle\Routing\Matcher\LegacyMatcher
         decorates: contao.routing.nested_matcher
@@ -376,7 +381,8 @@ services:
             - "@contao.routing.final_matcher"
         calls:
             - ["addRouteFilter", ["@contao.routing.domain_filter"]]
-            - ["addRouteFilter", ["@contao.routing.publishing_filter"]]
+            - ["addRouteFilter", ["@contao.routing.published_filter"]]
+            - ["addRouteFilter", ["@contao.routing.language_filter"]]
         public: true
 
     contao.routing.page_router:
@@ -393,8 +399,8 @@ services:
         tags:
             - { name: router, priority: 20 }
 
-    contao.routing.publishing_filter:
-        class: Contao\CoreBundle\Routing\Matcher\PublishingFilter
+    contao.routing.published_filter:
+        class: Contao\CoreBundle\Routing\Matcher\PublishedFilter
         arguments:
             - "@contao.security.token_checker"
 

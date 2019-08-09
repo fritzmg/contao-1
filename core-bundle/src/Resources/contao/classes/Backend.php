@@ -301,6 +301,8 @@ abstract class Backend extends Controller
 			}
 		}
 
+		unset($arrGroup);
+
 		$this->import(BackendUser::class, 'User');
 		$blnAccess = (isset($arrModule['disablePermissionChecks']) && $arrModule['disablePermissionChecks'] === true) || $this->User->hasAccess($module, 'modules');
 
@@ -1109,6 +1111,23 @@ abstract class Backend extends Controller
       });
     });
   </script>';
+	}
+
+	/**
+	 * Return the decoded host name
+	 *
+	 * @return string
+	 */
+	public static function getDecodedHostname()
+	{
+		$host = Environment::get('host');
+
+		if (strncmp($host, 'xn--', 4) === 0)
+		{
+			$host = Idna::decode($host);
+		}
+
+		return $host;
 	}
 
 	/**

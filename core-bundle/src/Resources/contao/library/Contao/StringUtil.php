@@ -107,7 +107,7 @@ class StringUtil
 		$intCharCount = 0;
 		$arrOpenTags = array();
 		$arrTagBuffer = array();
-		$arrEmptyTags = array('area', 'base', 'br', 'col', 'hr', 'img', 'input', 'frame', 'link', 'meta', 'param');
+		$arrEmptyTags = array('area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr');
 
 		$strString = preg_replace('/[\t\n\r]+/', ' ', $strString);
 		$strString = strip_tags($strString, Config::get('allowedTags'));
@@ -373,6 +373,8 @@ class StringUtil
 			}
 		}
 
+		unset($strEmail);
+
 		// Encode opening arrow brackets (see #3998)
 		$strString = preg_replace_callback('@</?([^\s<>/]*)@', function ($matches) use ($strAllowedTags)
 		{
@@ -584,7 +586,7 @@ class StringUtil
 
 		$evaluateExpression = function ($strExpression) use ($arrData)
 		{
-			if (!preg_match('/^([^=!<>\s]+)([=!<>]+)(.+)$/is', $strExpression, $arrMatches))
+			if (!preg_match('/^([^=!<>\s]+)([=!<>]+)(.+)$/s', $strExpression, $arrMatches))
 			{
 				return false;
 			}

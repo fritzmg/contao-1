@@ -18,7 +18,6 @@ use Contao\CoreBundle\Tests\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Lock\LockInterface;
 
 class SymlinksCommandTest extends TestCase
 {
@@ -49,32 +48,16 @@ class SymlinksCommandTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $code);
-        $this->assertContains(' web/system/modules/foobar/html/foo/bar ', $display);
-        $this->assertContains(' Skipped because system/modules/foobar/html will be symlinked. ', $display);
-        $this->assertContains(' web/system/modules/foobar/assets ', $display);
-        $this->assertContains(' system/modules/foobar/assets ', $display);
-        $this->assertContains(' web/system/modules/foobar/html ', $display);
-        $this->assertContains(' system/modules/foobar/html ', $display);
-        $this->assertContains(' system/themes/default ', $display);
-        $this->assertContains(' The path "system/themes/default" exists and is not a symlink. ', $display);
-        $this->assertContains(' system/themes/flexible ', $display);
-        $this->assertContains(' vendor/contao/test-bundle/Resources/contao/themes/flexible ', $display);
-        $this->assertContains(' web/assets ', $display);
-        $this->assertContains(' assets ', $display);
-        $this->assertContains(' web/system/themes ', $display);
-        $this->assertContains(' system/themes ', $display);
-        $this->assertContains(' system/logs ', $display);
-        $this->assertContains(' var/logs ', $display);
-    }
-
-    public function testIsLockedWhileRunning(): void
-    {
-        $command = $this->mockCommand(true);
-        $tester = new CommandTester($command);
-        $code = $tester->execute([]);
-
-        $this->assertSame(1, $code);
-        $this->assertContains('The command is already running in another process.', $tester->getDisplay());
+        $this->assertNotRegExp('# web/files +files #', $display);
+        $this->assertRegExp('# web/files/public +files/public #', $display);
+        $this->assertRegExp('# web/system/modules/foobar/html/foo/bar +Skipped because system/modules/foobar/html will be symlinked\. #', $display);
+        $this->assertRegExp('# web/system/modules/foobar/assets +system/modules/foobar/assets #', $display);
+        $this->assertRegExp('# web/system/modules/foobar/html +system/modules/foobar/html #', $display);
+        $this->assertRegExp('# system/themes/default +The path "system/themes/default" exists and is not a symlink\. #', $display);
+        $this->assertRegExp('# system/themes/flexible +vendor/contao/test-bundle/Resources/contao/themes/flexible #', $display);
+        $this->assertRegExp('# web/assets +assets #', $display);
+        $this->assertRegExp('# web/system/themes +system/themes #', $display);
+        $this->assertRegExp('# system/logs +var/logs #', $display);
     }
 
     public function testConvertsAbsolutePathsToRelativePaths(): void
@@ -95,27 +78,14 @@ class SymlinksCommandTest extends TestCase
         $this->assertSame('var/logs', $relativePath);
     }
 
-    private function mockCommand(bool $isLocked = false): SymlinksCommand
+    private function mockCommand(): SymlinksCommand
     {
-        $lock = $this->createMock(LockInterface::class);
-        $lock
-            ->expects($this->once())
-            ->method('acquire')
-            ->willReturn(!$isLocked)
-        ;
-
-        $lock
-            ->expects($isLocked ? $this->never() : $this->once())
-            ->method('release')
-        ;
-
         return new SymlinksCommand(
             $this->getFixturesDir(),
             'files',
             $this->getFixturesDir().'/var/logs',
             new ResourceFinder($this->getFixturesDir().'/vendor/contao/test-bundle/Resources/contao'),
-            $this->createMock(EventDispatcherInterface::class),
-            $lock
+            $this->createMock(EventDispatcherInterface::class)
         );
     }
 }

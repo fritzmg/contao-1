@@ -287,16 +287,11 @@ class RouteProvider implements RouteProviderInterface
 
         $path = '/';
         $requirements = [];
-        $condition = null;
         $defaults = $this->getRouteDefaults($page);
 
         if ($this->prependLocale) {
             $path = '/{_locale}'.$path;
             $requirements['_locale'] = $page->rootLanguage;
-        }
-
-        if (!$page->rootIsFallback) {
-            $condition = "'{$page->rootLanguage}' in request.getLanguages()";
         }
 
         $routes['tl_page.'.$page->id.'.root'] = new Route(
@@ -306,8 +301,7 @@ class RouteProvider implements RouteProviderInterface
             [],
             $page->domain,
             $page->rootUseSSL ? 'https' : null,
-            [],
-            $this->prependLocale ? null : $condition
+            []
         );
 
         /** @var Config $config */
@@ -326,8 +320,7 @@ class RouteProvider implements RouteProviderInterface
             [],
             $page->domain,
             $page->rootUseSSL ? 'https' : null,
-            [],
-            $condition
+            []
         );
     }
 
@@ -381,6 +374,21 @@ class RouteProvider implements RouteProviderInterface
     {
         // Convert languages array so key is language and value is priority
         if (null !== $languages) {
+            foreach ($languages as &$language) {
+                $language = str_replace('_', '-', $language);
+
+                if (5 === \strlen($language)) {
+                    $lng = substr($language, 0, 2);
+
+                    // Append the language if only language plus dialect is given (see #430)
+                    if (!\in_array($lng, $languages, true)) {
+                        $languages[] = $lng;
+                    }
+                }
+            }
+
+            unset($language);
+
             $languages = array_flip(array_values($languages));
         }
 

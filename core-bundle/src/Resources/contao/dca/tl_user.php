@@ -24,7 +24,8 @@ $GLOBALS['TL_DCA']['tl_user'] = array
 		),
 		'onsubmit_callback' => array
 		(
-			array('tl_user', 'storeDateAdded')
+			array('tl_user', 'storeDateAdded'),
+			array('tl_user', 'updateCurrentUser')
 		),
 		'sql' => array
 		(
@@ -43,7 +44,7 @@ $GLOBALS['TL_DCA']['tl_user'] = array
 		'sorting' => array
 		(
 			'mode'                    => 2,
-			'fields'                  => array('dateAdded DESC'),
+			'fields'                  => array('dateAdded'),
 			'flag'                    => 1,
 			'panelLayout'             => 'filter;sort,search,limit'
 		),
@@ -763,6 +764,8 @@ class tl_user extends Contao\Backend
 					$this->Automator->purgePageCache();
 					Contao\Message::addConfirmation($GLOBALS['TL_LANG']['tl_user']['tempPurged']);
 				}
+
+				$this->reload();
 			}
 		}
 
@@ -869,6 +872,20 @@ class tl_user extends Contao\Backend
 
 		$this->Database->prepare("UPDATE tl_user SET dateAdded=? WHERE id=?")
 					   ->execute($time, $dc->id);
+	}
+
+	/**
+	 * Update the current user if something changes, otherwise they would be
+	 * logged out automatically
+	 *
+	 * @param Contao\DataContainer $dc
+	 */
+	public function updateCurrentUser(Contao\DataContainer $dc)
+	{
+		if ($this->User->id == $dc->id)
+		{
+			$this->User->findBy('id', $this->User->id);
+		}
 	}
 
 	/**

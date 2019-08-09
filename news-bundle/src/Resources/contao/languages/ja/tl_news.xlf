@@ -263,7 +263,7 @@
       </trans-unit>
       <trans-unit id="tl_news.new.1">
         <source>Create a new news item</source>
-        <target>新しくニュース項目を作成</target>
+        <target>新しいニュース項目を作成</target>
       </trans-unit>
       <trans-unit id="tl_news.show.0">
         <source>Item details</source>

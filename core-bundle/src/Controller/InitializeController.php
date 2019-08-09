@@ -15,6 +15,13 @@ namespace Contao\CoreBundle\Controller;
 use Contao\CoreBundle\Response\InitializeControllerResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\HttpKernel;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -53,6 +60,11 @@ class InitializeController extends AbstractController
 
         $realRequest->attributes->replace($masterRequest->attributes->all());
 
+        // Empty the request stack to make our real request the master
+        do {
+            $pop = $this->get('request_stack')->pop();
+        } while ($pop);
+
         // Initialize the framework with the real request
         $this->get('request_stack')->push($realRequest);
         $this->get('contao.framework')->initialize();
@@ -61,6 +73,60 @@ class InitializeController extends AbstractController
         // it will pop the current request, resulting in the real request being active.
         $this->get('request_stack')->push($masterRequest);
 
+        set_exception_handler(function ($e) use ($realRequest): void {
+            // Do not catch PHP7 Throwables
+            if (!$e instanceof \Exception) {
+                throw $e;
+            }
+
+            $this->handleException($e, $realRequest, HttpKernelInterface::MASTER_REQUEST);
+        });
+
         return new InitializeControllerResponse('', 204);
+    }
+
+    /**
+     * Handles an exception by trying to convert it to a Response object.
+     *
+     * @param int $type HttpKernelInterface::MASTER_REQUEST or HttpKernelInterface::SUB_REQUEST
+     *
+     * @see HttpKernel::handleException()
+     */
+    private function handleException(\Exception $e, Request $request, $type): void
+    {
+        $event = new GetResponseForExceptionEvent($this->get('http_kernel'), $request, $type, $e);
+        $this->get('event_dispatcher')->dispatch(KernelEvents::EXCEPTION, $event);
+
+        // A listener might have replaced the exception
+        $e = $event->getException();
+
+        if (!$response = $event->getResponse()) {
+            throw $e;
+        }
+
+        // The developer asked for a specific status code
+        if (
+            !$event->isAllowingCustomResponseCode()
+            && !$response->isClientError()
+            && !$response->isServerError()
+            && !$response->isRedirect()
+        ) {
+            // Ensure that we actually have an error response
+            if ($e instanceof HttpExceptionInterface) {
+                // Keep the HTTP status code and headers
+                $response->setStatusCode($e->getStatusCode());
+                $response->headers->add($e->getHeaders());
+            } else {
+                $response->setStatusCode(500);
+            }
+        }
+
+        $response->send();
+
+        /** @var KernelInterface&TerminableInterface $kernel */
+        $kernel = $this->get('kernel');
+        $kernel->terminate($request, $response);
+
+        exit;
     }
 }

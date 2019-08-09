@@ -57,7 +57,7 @@ $GLOBALS['TL_DCA']['tl_news'] = array
 		'sorting' => array
 		(
 			'mode'                    => 4,
-			'fields'                  => array('date DESC'),
+			'fields'                  => array('date'),
 			'headerFields'            => array('title', 'jumpTo', 'tstamp', 'protected', 'allowComments'),
 			'panelLayout'             => 'filter;sort,search,limit',
 			'child_record_callback'   => array('tl_news', 'listNewsArticles'),
@@ -231,7 +231,7 @@ $GLOBALS['TL_DCA']['tl_news'] = array
 			(
 				array('tl_news', 'loadTime')
 			),
-			'sql'                     => "int(10) unsigned NOT NULL default '0'"
+			'sql'                     => "int(10) NOT NULL default '0'"
 		),
 		'pageTitle' => array
 		(
@@ -623,11 +623,6 @@ class tl_news extends Contao\Backend
 
 				$objArchive = $this->Database->prepare("SELECT id FROM tl_news WHERE pid=?")
 											 ->execute($id);
-
-				if ($objArchive->numRows < 1)
-				{
-					throw new Contao\CoreBundle\Exception\AccessDeniedException('Invalid news archive ID ' . $id . '.');
-				}
 
 				/** @var Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
 				$objSession = Contao\System::getContainer()->get('session');

@@ -1,5 +1,67 @@
 # Change log
 
+## 4.7.7 (2019-07-16)
+
+ * Check for a locale in the URL in the `getRootPageFromUrl()` method (see #456).
+ * Correctly hide running events in the event list.
+ * Correctly apply the sorting flags in the list and parent view (see contao/core-bundle#1536).
+ * Purge the search index when a page alias changes (see #472).
+ * Show only newsletter channels with redirect page in the newsletter list module (see #494).
+ * Use `scssphp/scssphp` instead of `leafo/scssphp` (see #506).
+ * Hide empty legends in the `member_grouped.html5` template (see #514).
+
+## 4.7.6 (2019-05-21)
+
+ * Ignore the query string when marking pages as "active" (see #480).
+ * Do not cache file downloads in the HTTP cache (see #460).
+ * Fix the "Recreate the symlinks" maintenance task (see #462).
+ * Do not inherit cache timeouts on error pages (see #231).
+ * Correctly show redirect pages in the navigation menu (see #466).
+
+## 4.7.5 (2019-04-30)
+
+ * Prevent SQL injections in the file manager search (see CVE-2019-11512).
+ * Hide the "print article as PDF" link if there is no PDF handler (see #417).
+ * Correctly handle dates in the news bundle (see #436).
+ * Also show future news items if the "show all news items" option is selected (see #419).
+
+## 4.7.4 (2019-04-10)
+
+ * Correctly copy multiple events into an empty calendar (see #427).
+ * Correctly check the permissions to create form fields (see #414).
+ * Fix the save callback in the back end password module (see #429).
+ * Correctly handle dates in the calendar bundle (see #428).
+ * Fall back to the language if only language plus region is given (see #430).
+
+## 4.7.3 (2019-04-09)
+
+ * Fix the request token check in the front end (see CVE-2019-10642).
+ * Invalidate old opt-in tokens when a token is confirmed (see CVE-2019-10643).
+ * Invalidate the user sessions if a password changes (see CVE-2019-10641).
+ * Correctly check if a file or folder is excluded from synchronization (see 410).
+
+## 4.7.2 (2019-03-25)
+
+ * Make custom layout section titles and IDs mandatory (see #341).
+ * Always add the host to the title attribute in the back end (see #339).
+ * Prevent using reserved layout section IDs in custom layout sections (see #301).
+ * Show the video elements headline in the back end preview (see #382).
+ * Correctly check for related records when purgin opt-in tokens.
+
+## 4.7.1 (2019-02-21)
+
+ * Do not add `crossorigin="anonymous"` to all external scripts (see #356).
+ * Use the host as title on the login page (see #339).
+ * Correctly set the root IDs in the "checkPermission" callbacks (see #320).
+ * Fix the format selection in the image size widget (see #315).
+ * Ignore a `.public` file in the root files directory (see #286).  
+ * Correctly load MooTools via CDN (see #318).
+ * Hide the impersonation link if already in impersonation mode (see #345).
+ * Store the user object after it has been loaded (see #347).
+ * Do not double decode URL fragments (see #321).
+ * Correctly replace insert tags if the page contains invalid characters (see #349).
+ * Correctly redirect to the preferred language for empty URL (see #336).
+
 ## 4.7.0 (2019-02-15)
 
  * Fix the input field height on Windows (see #79).

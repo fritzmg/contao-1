@@ -38,7 +38,7 @@ $GLOBALS['TL_DCA']['tl_newsletter'] = array
 		'sorting' => array
 		(
 			'mode'                    => 4,
-			'fields'                  => array('sent', 'date DESC', 'tstamp DESC'),
+			'fields'                  => array('sent', 'date'),
 			'headerFields'            => array('title', 'jumpTo', 'tstamp', 'sender'),
 			'panelLayout'             => 'filter;sort,search,limit',
 			'child_record_callback'   => array('tl_newsletter', 'listNewsletters')
@@ -369,11 +369,6 @@ class tl_newsletter extends Contao\Backend
 
 				$objChannel = $this->Database->prepare("SELECT id FROM tl_newsletter WHERE pid=?")
 											 ->execute($id);
-
-				if ($objChannel->numRows < 1)
-				{
-					throw new Contao\CoreBundle\Exception\AccessDeniedException('Invalid newsletter channel ID  ' . $id . '.');
-				}
 
 				/** @var Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
 				$objSession = Contao\System::getContainer()->get('session');

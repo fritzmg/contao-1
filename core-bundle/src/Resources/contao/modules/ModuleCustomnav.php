@@ -123,7 +123,7 @@ class ModuleCustomnav extends Module
 			$_groups = StringUtil::deserialize($objModel->groups);
 
 			// Do not show protected pages unless a front end user is logged in
-			if (!$objModel->protected || (\is_array($_groups) && \count(array_intersect($_groups, $groups))) || $this->showProtected)
+			if (!$objModel->protected || $this->showProtected || (\is_array($_groups) && \is_array($groups) && \count(array_intersect($_groups, $groups))))
 			{
 				// Get href
 				switch ($objModel->type)
@@ -132,21 +132,27 @@ class ModuleCustomnav extends Module
 						$href = $objModel->url;
 						break;
 
-					case 'forward':
-						if (($objNext = $objModel->getRelated('jumpTo')) instanceof PageModel || ($objNext = PageModel::findFirstPublishedRegularByPid($objModel->id)) instanceof PageModel)
-						{
-							/** @var PageModel $objNext */
-							$href = $objNext->getFrontendUrl();
-						}
-						else
-						{
-							$href = $objModel->getFrontendUrl();
-						}
-						break;
-
 					case 'root':
 						// Overwrite the alias to link to the empty URL or language URL (see #1641)
 						$objModel->alias = 'index';
+						$href = $objModel->getFrontendUrl();
+						break;
+
+					case 'forward':
+						if ($objModel->jumpTo)
+						{
+							$objNext = PageModel::findPublishedById($objModel->jumpTo);
+						}
+						else
+						{
+							$objNext = PageModel::findFirstPublishedRegularByPid($objModel->id);
+						}
+
+						if ($objNext instanceof PageModel)
+						{
+							$href = $objNext->getFrontendUrl();
+							break;
+						}
 						// DO NOT ADD A break; STATEMENT
 
 					default:
@@ -156,8 +162,11 @@ class ModuleCustomnav extends Module
 
 				$trail = \in_array($objModel->id, $objPage->trail);
 
+				// Use the path without query string to check for active pages (see #480)
+				list($path) = explode('?', \Environment::get('request'), 2);
+
 				// Active page
-				if ($objPage->id == $objModel->id && $href == Environment::get('request'))
+				if ($objPage->id == $objModel->id && $href == $path)
 				{
 					$strClass = trim($objModel->cssClass);
 					$row = $objModel->row();

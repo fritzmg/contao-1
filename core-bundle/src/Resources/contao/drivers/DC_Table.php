@@ -3027,7 +3027,7 @@ class DC_Table extends DataContainer implements \listable, \editable
 		$arrData = $GLOBALS['TL_DCA'][$this->strTable]['fields'][$this->strField];
 
 		// Convert date formats into timestamps
-		if ($varValue != '' && \in_array($arrData['eval']['rgxp'], array('date', 'time', 'datim')))
+		if ($varValue !== null && $varValue !== '' && \in_array($arrData['eval']['rgxp'], array('date', 'time', 'datim')))
 		{
 			$objDate = new Date($varValue, Date::getFormatFromRgxp($arrData['eval']['rgxp']));
 			$varValue = $objDate->tstamp;
@@ -3320,24 +3320,26 @@ class DC_Table extends DataContainer implements \listable, \editable
 			// Remove the entries from the database
 			if (!empty($new_records[$this->strTable]))
 			{
+				$origId = $this->id;
+				$origActiveRecord = $this->activeRecord;
 				$ids = array_map('\intval', $new_records[$this->strTable]);
 
 				foreach ($ids as $id)
 				{
-					$dataContainer = static::class;
-					$dc = new $dataContainer($this->strTable);
-					$dc->id = $id;
-
 					// Get the current record
 					$objRow = $this->Database->prepare("SELECT * FROM " . $this->strTable . " WHERE id=?")
 											 ->limit(1)
 											 ->execute($id);
 
-					$dc->activeRecord = $objRow;
+					$this->id = $id;
+					$this->activeRecord = $objRow;
 
 					// Invalidate cache tags (no need to invalidate the parent)
-					$this->invalidateCacheTags($dc);
+					$this->invalidateCacheTags($this);
 				}
+
+				$this->id = $origId;
+				$this->activeRecord = $origActiveRecord;
 
 				$objStmt = $this->Database->execute("DELETE FROM " . $this->strTable . " WHERE id IN(" . implode(',', $ids) . ") AND tstamp=0");
 
@@ -3365,16 +3367,21 @@ class DC_Table extends DataContainer implements \listable, \editable
 		{
 			if ($GLOBALS['TL_DCA'][$this->strTable]['config']['dynamicPtable'])
 			{
-				$objStmt = $this->Database->execute("DELETE FROM " . $this->strTable . " WHERE ptable='" . $ptable . "' AND NOT EXISTS (SELECT * FROM " . $ptable . " WHERE " . $this->strTable . ".pid = " . $ptable . ".id)");
+				$objIds = $this->Database->execute("SELECT c.id FROM " . $this->strTable . " c LEFT JOIN " . $ptable . " p ON c.pid=p.id WHERE c.ptable='" . $ptable . "' AND p.id IS NULL");
 			}
 			else
 			{
-				$objStmt = $this->Database->execute("DELETE FROM " . $this->strTable . " WHERE NOT EXISTS (SELECT * FROM " . $ptable . " WHERE " . $this->strTable . ".pid = " . $ptable . ".id)");
+				$objIds = $this->Database->execute("SELECT c.id FROM " . $this->strTable . " c LEFT JOIN " . $ptable . " p ON c.pid=p.id WHERE p.id IS NULL");
 			}
 
-			if ($objStmt->affectedRows > 0)
+			if ($objIds->numRows)
 			{
-				$reload = true;
+				$objStmt = $this->Database->execute("DELETE FROM " . $this->strTable . " WHERE id IN(" . implode(',', array_map('\intval', $objIds->fetchEach('id'))) . ")");
+
+				if ($objStmt->affectedRows > 0)
+				{
+					$reload = true;
+				}
 			}
 		}
 
@@ -3393,16 +3400,21 @@ class DC_Table extends DataContainer implements \listable, \editable
 
 					if ($GLOBALS['TL_DCA'][$v]['config']['dynamicPtable'])
 					{
-						$objStmt = $this->Database->execute("DELETE FROM $v WHERE ptable='" . $this->strTable . "' AND NOT EXISTS (SELECT * FROM " . $this->strTable . " WHERE $v.pid = " . $this->strTable . ".id)");
+						$objIds = $this->Database->execute("SELECT c.id FROM " . $v . " c LEFT JOIN " . $this->strTable . " p ON c.pid=p.id WHERE c.ptable='" . $this->strTable . "' AND p.id IS NULL");
 					}
 					else
 					{
-						$objStmt = $this->Database->execute("DELETE FROM $v WHERE NOT EXISTS (SELECT * FROM " . $this->strTable . " WHERE $v.pid = " . $this->strTable . ".id)");
+						$objIds = $this->Database->execute("SELECT c.id FROM " . $v . " c LEFT JOIN " . $this->strTable . " p ON c.pid=p.id WHERE p.id IS NULL");
 					}
 
-					if ($objStmt->affectedRows > 0)
+					if ($objIds->numRows)
 					{
-						$reload = true;
+						$objStmt = $this->Database->execute("DELETE FROM " . $v . " WHERE id IN(" . implode(',', array_map('\intval', $objIds->fetchEach('id'))) . ")");
+
+						if ($objStmt->affectedRows > 0)
+						{
+							$reload = true;
+						}
 					}
 				}
 			}
@@ -4335,6 +4347,14 @@ class DC_Table extends DataContainer implements \listable, \editable
 			// ORDER BY
 			if (!empty($orderBy) && \is_array($orderBy))
 			{
+				foreach ($orderBy as $k=>$v)
+				{
+					if (isset($GLOBALS['TL_DCA'][$this->strTable]['fields'][$v]['flag']) && ($GLOBALS['TL_DCA'][$this->strTable]['fields'][$v]['flag'] % 2) == 0)
+					{
+						$orderBy[$k] .= ' DESC';
+					}
+				}
+
 				$query .= " ORDER BY " . implode(', ', $orderBy);
 			}
 
@@ -4641,8 +4661,23 @@ class DC_Table extends DataContainer implements \listable, \editable
 			{
 				list($key, $direction) = explode(' ', $v, 2);
 
+				// If there is no direction, check the global flag in sorting mode 1 or the field flag in all other sorting modes
+				if (!$direction)
+				{
+					if ($GLOBALS['TL_DCA'][$this->strTable]['list']['sorting']['mode'] == 1 && isset($GLOBALS['TL_DCA'][$this->strTable]['list']['sorting']['flag']) && ($GLOBALS['TL_DCA'][$this->strTable]['list']['sorting']['flag'] % 2) == 0)
+					{
+						$direction = 'DESC';
+					}
+					elseif (isset($GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['flag']) && ($GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['flag'] % 2) == 0)
+					{
+						$direction = 'DESC';
+					}
+				}
+
 				if ($GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['eval']['findInSet'])
 				{
+					$direction = null;
+
 					if (\is_array($GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['options_callback']))
 					{
 						$strClass = $GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['options_callback'][0];
@@ -4669,7 +4704,12 @@ class DC_Table extends DataContainer implements \listable, \editable
 				}
 				elseif (\in_array($GLOBALS['TL_DCA'][$this->strTable]['fields'][$key]['flag'], array(5, 6, 7, 8, 9, 10)))
 				{
-					$orderBy[$k] = "CAST($key AS SIGNED)" . ($direction ? " $direction" : ""); // see #5503
+					$orderBy[$k] = "CAST($key AS SIGNED)"; // see #5503
+				}
+
+				if ($direction)
+				{
+					$orderBy[$k] = $key . ' ' . $direction;
 				}
 			}
 
@@ -4694,11 +4734,6 @@ class DC_Table extends DataContainer implements \listable, \editable
 			{
 				$query .= " ORDER BY " . implode(', ', $orderBy);
 			}
-		}
-
-		if ($GLOBALS['TL_DCA'][$this->strTable]['list']['sorting']['mode'] == 1 && ($GLOBALS['TL_DCA'][$this->strTable]['list']['sorting']['flag'] % 2) == 0)
-		{
-			$query .= " DESC";
 		}
 
 		$objRowStmt = $this->Database->prepare($query);
@@ -5570,19 +5605,19 @@ class DC_Table extends DataContainer implements \listable, \editable
 				// Sort by day
 				if (\in_array($GLOBALS['TL_DCA'][$this->strTable]['fields'][$field]['flag'], array(5, 6)))
 				{
-					$what = "UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-%%m-%%d')) AS $what";
+					$what = "IF($what!='', UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-%%m-%%d')), '') AS $what";
 				}
 
 				// Sort by month
 				elseif (\in_array($GLOBALS['TL_DCA'][$this->strTable]['fields'][$field]['flag'], array(7, 8)))
 				{
-					$what = "UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-%%m-01')) AS $what";
+					$what = "IF($what!='', UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-%%m-01')), '') AS $what";
 				}
 
 				// Sort by year
 				elseif (\in_array($GLOBALS['TL_DCA'][$this->strTable]['fields'][$field]['flag'], array(9, 10)))
 				{
-					$what = "UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-01-01')) AS $what";
+					$what = "IF($what!='', UNIX_TIMESTAMP(FROM_UNIXTIME($what , '%%Y-01-01')), '') AS $what";
 				}
 			}
 
@@ -5614,7 +5649,7 @@ class DC_Table extends DataContainer implements \listable, \editable
 
 					foreach ($options as $k=>$v)
 					{
-						if ($v == '')
+						if ($v === '')
 						{
 							$options[$v] = '-';
 						}
@@ -5634,7 +5669,7 @@ class DC_Table extends DataContainer implements \listable, \editable
 
 					foreach ($options as $k=>$v)
 					{
-						if ($v == '')
+						if ($v === '')
 						{
 							$options[$v] = '-';
 						}
@@ -5660,7 +5695,7 @@ class DC_Table extends DataContainer implements \listable, \editable
 
 					foreach ($options as $k=>$v)
 					{
-						if ($v == '')
+						if ($v === '')
 						{
 							$options[$v] = '-';
 						}

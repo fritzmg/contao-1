@@ -2288,7 +2288,7 @@ class DC_Folder extends DataContainer implements \listable, \editable
 		elseif ($this->blnIsDbAssisted && $this->objActiveRecord !== null)
 		{
 			// Convert date formats into timestamps
-			if ($varValue != '' && \in_array($arrData['eval']['rgxp'], array('date', 'time', 'datim')))
+			if ($varValue !== null && $varValue !== '' && \in_array($arrData['eval']['rgxp'], array('date', 'time', 'datim')))
 			{
 				$objDate = new Date($varValue, Date::getFormatFromRgxp($arrData['eval']['rgxp']));
 				$varValue = $objDate->tstamp;
@@ -2827,15 +2827,14 @@ class DC_Folder extends DataContainer implements \listable, \editable
 		// Store search value in the current session
 		if (Input::post('FORM_SUBMIT') == 'tl_filters')
 		{
-			$strField = Input::post('tl_field', true);
 			$strKeyword = ltrim(Input::postRaw('tl_value'), '*');
 
 			// Make sure the regular expression is valid
-			if ($strKeyword != '')
+			if ($strKeyword)
 			{
 				try
 				{
-					$this->Database->prepare("SELECT * FROM " . $this->strTable . " WHERE " . $strField . " REGEXP ?")
+					$this->Database->prepare("SELECT * FROM " . $this->strTable . " WHERE name REGEXP ?")
 								   ->limit(1)
 								   ->execute($strKeyword);
 				}
@@ -2845,7 +2844,6 @@ class DC_Folder extends DataContainer implements \listable, \editable
 				}
 			}
 
-			$session['search'][$this->strTable]['field'] = $strField;
 			$session['search'][$this->strTable]['value'] = $strKeyword;
 
 			$objSessionBag->replace($session);

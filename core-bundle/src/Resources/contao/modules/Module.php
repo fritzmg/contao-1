@@ -316,7 +316,7 @@ abstract class Module extends Frontend
 			}
 
 			// Do not show protected pages unless a front end user is logged in
-			if (!$objSubpage->protected || (\is_array($_groups) && \is_array($groups) && \count(array_intersect($_groups, $groups))) || $this->showProtected || ($this instanceof ModuleSitemap && $objSubpage->sitemap == 'map_always'))
+			if (!$objSubpage->protected || $this->showProtected || ($this instanceof ModuleSitemap && $objSubpage->sitemap == 'map_always') || (\is_array($_groups) && \is_array($groups) && \count(array_intersect($_groups, $groups))))
 			{
 				// Check whether there will be subpages
 				if ($objSubpage->subpages > 0 && (!$this->showLevel || $this->showLevel >= $level || (!$this->hardLimit && ($objPage->id == $objSubpage->id || \in_array($objPage->id, $this->Database->getChildRecords($objSubpage->id, 'tl_page'))))))
@@ -341,18 +341,15 @@ abstract class Module extends Frontend
 					case 'forward':
 						if ($objSubpage->jumpTo)
 						{
-							/** @var PageModel $objNext */
-							$objNext = $objSubpage->getRelated('jumpTo');
+							$objNext = PageModel::findPublishedById($objSubpage->jumpTo);
 						}
 						else
 						{
 							$objNext = PageModel::findFirstPublishedRegularByPid($objSubpage->id);
 						}
 
-						$isInvisible = !$objNext->published || ($objNext->start != '' && $objNext->start > time()) || ($objNext->stop != '' && $objNext->stop < time());
-
 						// Hide the link if the target page is invisible
-						if (!$objNext instanceof PageModel || ($isInvisible && !BE_USER_LOGGED_IN))
+						if (!$objNext instanceof PageModel || (!$objNext->loadDetails()->isPublic && !BE_USER_LOGGED_IN))
 						{
 							continue 2;
 						}
@@ -368,8 +365,11 @@ abstract class Module extends Frontend
 				$row = $objSubpage->row();
 				$trail = \in_array($objSubpage->id, $objPage->trail);
 
+				// Use the path without query string to check for active pages (see #480)
+				list($path) = explode('?', \Environment::get('request'), 2);
+
 				// Active page
-				if (($objPage->id == $objSubpage->id || ($objSubpage->type == 'forward' && $objPage->id == $objSubpage->jumpTo)) && !($this instanceof ModuleSitemap) && $href == Environment::get('request'))
+				if (($objPage->id == $objSubpage->id || ($objSubpage->type == 'forward' && $objPage->id == $objSubpage->jumpTo)) && !($this instanceof ModuleSitemap) && $href == $path)
 				{
 					// Mark active forward pages (see #4822)
 					$strClass = (($objSubpage->type == 'forward' && $objPage->id == $objSubpage->jumpTo) ? 'forward' . ($trail ? ' trail' : '') : 'active') . (($subitems != '') ? ' submenu' : '') . ($objSubpage->protected ? ' protected' : '') . (($objSubpage->cssClass != '') ? ' ' . $objSubpage->cssClass : '');

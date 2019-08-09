@@ -57,7 +57,7 @@ $GLOBALS['TL_DCA']['tl_calendar_events'] = array
 		'sorting' => array
 		(
 			'mode'                    => 4,
-			'fields'                  => array('startTime DESC'),
+			'fields'                  => array('startTime'),
 			'headerFields'            => array('title', 'jumpTo', 'tstamp', 'protected', 'allowComments'),
 			'panelLayout'             => 'filter;sort,search,limit',
 			'child_record_callback'   => array('tl_calendar_events', 'listEvents')
@@ -220,7 +220,7 @@ $GLOBALS['TL_DCA']['tl_calendar_events'] = array
 			(
 				array('tl_calendar_events', 'loadTime')
 			),
-			'sql'                     => "int(10) unsigned NULL"
+			'sql'                     => "int(10) NULL"
 		),
 		'endTime' => array
 		(
@@ -237,7 +237,7 @@ $GLOBALS['TL_DCA']['tl_calendar_events'] = array
 			(
 				array('tl_calendar_events', 'setEmptyEndTime')
 			),
-			'sql'                     => "int(10) unsigned NULL"
+			'sql'                     => "int(10) NULL"
 		),
 		'startDate' => array
 		(
@@ -659,11 +659,6 @@ class tl_calendar_events extends Contao\Backend
 
 				$objCalendar = $this->Database->prepare("SELECT id FROM tl_calendar_events WHERE pid=?")
 											  ->execute($id);
-
-				if ($objCalendar->numRows < 1)
-				{
-					throw new Contao\CoreBundle\Exception\AccessDeniedException('Invalid calendar ID ' . $id . '.');
-				}
 
 				/** @var Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
 				$objSession = Contao\System::getContainer()->get('session');

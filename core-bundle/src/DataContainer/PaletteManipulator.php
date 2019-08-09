@@ -193,6 +193,10 @@ class PaletteManipulator
         $groups = StringUtil::trimsplit(';', $palette);
 
         foreach ($groups as $group) {
+            if ('' === $group) {
+                continue;
+            }
+
             $hide = false;
             $fields = StringUtil::trimsplit(',', $group);
 
@@ -366,7 +370,7 @@ class PaletteManipulator
     {
         foreach ($config as $legend => $group) {
             if (empty($remove['parents']) || \in_array($legend, $remove['parents'], true)) {
-                $config[$legend]['fields'] = \array_diff($group['fields'], $remove['fields']);
+                $config[$legend]['fields'] = array_diff($group['fields'], $remove['fields']);
             }
         }
     }
