@@ -28,6 +28,12 @@ services:
             - { name: container.service_subscriber }
         public: true
 
+    Contao\CoreBundle\Controller\FrontendController:
+        arguments:
+            - '@Contao\CoreBundle\Cron\ContaoCron'
+        tags:
+            - { name: 'controller.service_arguments' }
+
     contao.assets.assets_context:
         class: Contao\CoreBundle\Asset\ContaoContext
         arguments:
@@ -109,6 +115,13 @@ services:
             - '@database_connection'
         tags:
             - { name: nelmio_cors.options_provider }
+
+    Contao\CoreBundle\Cron\ContaoCron:
+        arguments:
+            - '@database_connection'
+            - '@contao.framework'
+            - '@logger'
+            - '%kernel.debug%'
 
     contao.csrf.token_manager:
         class: Symfony\Component\Security\Csrf\CsrfTokenManager
