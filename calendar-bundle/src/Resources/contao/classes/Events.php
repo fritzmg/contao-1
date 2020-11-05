@@ -479,31 +479,31 @@ abstract class Events extends \Module
 				break;
 
 			case 'next_7':
-				return array(time(), strtotime('+7 days'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+7 days'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_14':
-				return array(time(), strtotime('+14 days'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+14 days'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_30':
-				return array(time(), strtotime('+1 month'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+1 month'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_90':
-				return array(time(), strtotime('+3 months'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+3 months'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_180':
-				return array(time(), strtotime('+6 months'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+6 months'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_365':
-				return array(time(), strtotime('+1 year'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+1 year'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_two':
-				return array(time(), strtotime('+2 years'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('+2 years'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_cur_month':
-				return array(time(), strtotime('last day of this month 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('last day of this month 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_cur_year':
-				return array(time(), strtotime('last day of december this year 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), strtotime('last day of december this year 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_next_month':
 				return array(strtotime('first day of next month 00:00:00'), strtotime('last day of next month 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
@@ -512,7 +512,7 @@ abstract class Events extends \Module
 				return array(strtotime('first day of january next year 00:00:00'), strtotime('last day of december next year 23:59:59'), $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'next_all': // 2038-01-01 00:00:00
-				return array(time(), 2145913200, $GLOBALS['TL_LANG']['MSC']['cal_empty']);
+				return array(strtotime('today'), 2145913200, $GLOBALS['TL_LANG']['MSC']['cal_empty']);
 
 			case 'past_7':
 				return array(strtotime('-7 days'), time(), $GLOBALS['TL_LANG']['MSC']['cal_empty']);

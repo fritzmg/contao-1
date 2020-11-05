@@ -170,15 +170,21 @@ class ModuleEventlist extends \Events
 		{
 			foreach ($days as $day=>$events)
 			{
-				// Skip events before the start day if the "shortened view" option is not set.
-				// Events after the end day are filtered in the Events::addEvent() method (see #8782).
-				if (!$this->cal_noSpan && $day < $intStart)
-				{
-					continue;
-				}
-
 				foreach ($events as $event)
 				{
+					// Skip events with an endTime in the past
+					if ($event['endTime'] < $intStart)
+					{
+						continue;
+					}
+
+					// Skip events for multi day events before the start day, if the "shortened view" option is not set.
+					// Events after the end day are filtered in the Events::addEvent() method (see #8782).
+					if (!$this->cal_noSpan && date('Y-m-d', $event['startTime']) !== date('Y-m-d', $event['endTime']) && $day < $intStart)
+					{
+						//continue;
+					}
+
 					// Use repeatEnd if > 0 (see #8447)
 					if (($event['repeatEnd'] ?: $event['endTime']) < $intStart || $event['startTime'] > $intEnd)
 					{
